@@ -1,0 +1,49 @@
+version: '3.5'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tiamat-app
+    restart: always
+    volumes:
+      - ./src:/var/www/html
+      - ./logs:/var/log/app
+    ports:
+      - "8080:80"
+      - "8443:443"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${MYSQL_DATABASE:-tiamat_db}
+      - DB_USERNAME=${MYSQL_USER:-tiamat_user}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-tiamat_password}
+    depends_on:
+      - db
+    networks:
+      - tiamat-network
+
+  db:
+    image: mysql:8
+    container_name: tiamat-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-tiamat_db}
+      - MYSQL_USER=${MYSQL_USER:-tiamat_user}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-tiamat_password}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root_password}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - tiamat-network
+
+networks:
+  tiamat-network:
+    driver: bridge
+
+volumes:
+  db_data:
